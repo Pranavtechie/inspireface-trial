@@ -1,7 +1,7 @@
 import json
 import os
 import pickle
-import urllib.request
+import platform
 from pathlib import Path
 
 import cv2
@@ -22,20 +22,51 @@ class FaceRecognizer:
         Initializes the FaceRecognizer, loading the InspireFace engine and the face database.
         """
         try:
-            model_path = os.path.join(Path.home(), ".inspireface", "models", "Megatron")
+            # Check for Linux OS, which we'll assume is a Rockchip device
+            # for the purpose of using the specialized hardware-accelerated model.
+            is_linux = platform.system() == "Linux"
 
-            if not os.path.exists(model_path):
-                print(f"Model not found at {model_path}, downloading...")
-                try:
-                    isf.pull_latest_model("Megatron")
-                    print("Model downloaded successfully.")
-                except Exception as e:
-                    print(f"Failed to download model: {e}")
-                    exit(1)
+            if is_linux and config.ROCKCHIP_MODEL:
+                print(
+                    f"Linux OS detected. Attempting to load Rockchip model: {config.ROCKCHIP_MODEL}."
+                )
+                # For Rockchip devices, reload is used to load the specific model.
+                # This function will also handle model downloading on first use.
+                ret = isf.reload(config.ROCKCHIP_MODEL)
+                if not ret:
+                    raise RuntimeError(
+                        f"Failed to load Rockchip model: {config.ROCKCHIP_MODEL}"
+                    )
+                print("Rockchip model loaded successfully.")
+            else:
+                if not is_linux:
+                    print(
+                        f"{platform.system()} OS detected. Loading general-purpose CPU model (Megatron)."
+                    )
+                else:  # is_linux but no ROCKCHIP_MODEL in config
+                    print(
+                        "Linux OS detected, but ROCKCHIP_MODEL not configured. Loading general-purpose CPU model (Megatron)."
+                    )
 
-            ret = isf.launch(resource_path=model_path)
-            if not ret:
-                raise RuntimeError("Failed to launch from local model.")
+                model_name = "Megatron"
+                model_path = os.path.join(
+                    Path.home(), ".inspireface", "models", model_name
+                )
+
+                if not os.path.exists(model_path):
+                    print(
+                        f"Model '{model_name}' not found at {model_path}, downloading..."
+                    )
+                    try:
+                        isf.pull_latest_model(model_name)
+                        print("Model downloaded successfully.")
+                    except Exception as e:
+                        print(f"Failed to download model: {e}")
+                        exit(1)
+
+                ret = isf.launch(resource_path=model_path)
+                if not ret:
+                    raise RuntimeError("Failed to launch from local model.")
 
             opt = isf.HF_ENABLE_FACE_RECOGNITION
             self.session = isf.InspireFaceSession(opt, isf.HF_DETECT_MODE_ALWAYS_DETECT)
@@ -53,22 +84,43 @@ class FaceRecognizer:
                 raise RuntimeError("Failed to enable FeatureHub.")
 
             self.id_to_name_map = self._load_id_map()
+
+            pickle_path = config.ID_NAME_MAP_PATH.replace(".json", ".pkl")
+            if os.path.exists(pickle_path) and not os.path.exists(
+                config.ID_NAME_MAP_PATH
+            ):
+                print(f"Migrating {pickle_path} to {config.ID_NAME_MAP_PATH}")
+                self._save_id_map()
+                os.remove(pickle_path)
+                print(f"Removed old pickle file: {pickle_path}")
+
             print("InspireFace session created and FeatureHub enabled.")
         except Exception as e:
             print(f"Error creating InspireFace session: {e}")
             exit(1)
 
     def _load_id_map(self):
-        """Loads the ID-to-name mapping from a pickle file."""
+        """Loads the ID-to-name mapping from a JSON file or pickle file."""
         if os.path.exists(config.ID_NAME_MAP_PATH):
-            with open(config.ID_NAME_MAP_PATH, "rb") as f:
+            with open(config.ID_NAME_MAP_PATH, "r") as f:
+                # JSON keys must be strings, so convert them back to integers
+                return {int(k): v for k, v in json.load(f).items()}
+
+        pickle_path = config.ID_NAME_MAP_PATH.replace(".json", ".pkl")
+        if os.path.exists(pickle_path):
+            print(
+                f"Found old pickle file at {pickle_path}. It will be migrated to JSON."
+            )
+            with open(pickle_path, "rb") as f:
                 return pickle.load(f)
+
         return {}
 
     def _save_id_map(self):
-        """Saves the ID-to-name mapping to a pickle file."""
-        with open(config.ID_NAME_MAP_PATH, "wb") as f:
-            pickle.dump(self.id_to_name_map, f)
+        """Saves the ID-to-name mapping to a JSON file."""
+        with open(config.ID_NAME_MAP_PATH, "w") as f:
+            # JSON keys must be strings
+            json.dump(self.id_to_name_map, f, indent=4)
 
     def _draw_faces(self, frame, faces, names, confidences):
         """Draws bounding boxes and names on the frame."""
@@ -269,11 +321,26 @@ class FaceRecognizer:
 
     def run(self):
         """
-        Starts the video capture and face recognition loop.
+        Starts the video capture and face recognition loop. It automatically
+        finds a working camera by trying indices 0 through 4.
         """
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            print("Error: Could not open video stream.")
+        cap = None
+        for i in range(5):
+            print(f"Attempting to open camera at index {i}...")
+            temp_cap = cv2.VideoCapture(i)
+            # Test if the camera is opened and we can read a frame
+            if temp_cap.isOpened() and temp_cap.read()[0]:
+                print(f"Successfully opened camera at index {i}.")
+                cap = temp_cap
+                break
+            else:
+                # Release the capture if it's not working
+                temp_cap.release()
+
+        if cap is None:
+            print(
+                "Error: Could not open a working video stream from any of the first 5 indices."
+            )
             return
 
         print("\\n--- Controls ---")
@@ -287,8 +354,8 @@ class FaceRecognizer:
             if not ret:
                 break
 
-            frame = self.recognize_faces(frame)
-            cv2.imshow("InspireFace Recognition", frame)
+            processed_frame = self.recognize_faces(frame)
+            cv2.imshow("InspireFace Recognition", processed_frame)
 
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
