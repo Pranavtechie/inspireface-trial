@@ -1,10 +1,11 @@
 version = 1
 revision = 2
-requires-python = "==3.10.18"
+requires-python = "==3.10.17"
 resolution-markers = [
     "sys_platform == 'darwin'",
     "platform_machine == 'aarch64' and sys_platform == 'linux'",
-    "(platform_machine != 'aarch64' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')",
+    "platform_machine != 'aarch64' and sys_platform == 'linux'",
+    "sys_platform != 'darwin' and sys_platform != 'linux'",
 ]
 
 [[package]]
@@ -156,7 +157,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "click" },
-    { name = "inspireface" },
+    { name = "inspireface", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "opencv-python" },
     { name = "paddlepaddle" },
     { name = "requests" },
@@ -166,7 +167,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
-    { name = "inspireface", path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" },
+    { name = "inspireface", marker = "sys_platform == 'darwin'", specifier = ">=1.2.3.post3" },
+    { name = "inspireface", marker = "sys_platform == 'linux'" },
     { name = "opencv-python", specifier = ">=4.11.0.86" },
     { name = "paddlepaddle", specifier = ">=2.6.0" },
     { name = "requests", specifier = ">=2.31.0" },
@@ -175,30 +177,22 @@ requires-dist = [
 
 [[package]]
 name = "inspireface"
-version = "0.0.0"
-source = { path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" }
+version = "1.2.3.post3"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "loguru" },
-    { name = "numpy" },
+    { name = "loguru", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
+    { name = "numpy", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
 ]
 wheels = [
-    { filename = "inspireface-0.0.0-cp310-cp310-linux_aarch64.whl", hash = "sha256:1c1880152bede0846d14237c8891effa35878efd29e8d70c3242f05fefc27b54" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "loguru" },
-    { name = "numpy" },
+    { url = "https://files.pythonhosted.org/packages/cb/6d/c2139db01282c5a3aed9b85344d0045a1f28812e7028a04cc69123a87641/inspireface-1.2.3.post3-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:28523db1048020d2568fe1a46707200d0e0f3f2c5e3f8ea5a3325d6521d00496", size = 2489960, upload-time = "2025-06-24T02:26:16.602Z" },
+    { url = "https://files.pythonhosted.org/packages/88/b4/66a7c1966afa7ee62ba73c6916d26091f8d7052285061d3ffef7b19ee7d1/inspireface-1.2.3.post3-cp310-cp310-macosx_14_0_universal2.whl", hash = "sha256:c788cdc8ed9008781e8294960bc011bba967f4acb86afe39fc01e064b61a52b1", size = 2042198, upload-time = "2025-06-24T02:26:39.384Z" },
+    { url = "https://files.pythonhosted.org/packages/57/c3/718dd829f785a575786dd516b73530ef61f85043d08102dbd595b6aacabe/inspireface-1.2.3.post3-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:939fc4ad2b483e74d56a71283e95da70c404fb1a7d3fced09a38c8d3d2b25d21", size = 2936095, upload-time = "2025-06-24T02:26:28.926Z" },
 ]
 
 [[package]]
 name = "loguru"
 version = "0.7.3"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
-]
 sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559, upload-time = "2024-12-06T11:20:56.608Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595, upload-time = "2024-12-06T11:20:54.538Z" },
@@ -376,13 +370,4 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/15/22/9ee70a2574a4f4599c47dd506532914ce044817c7752a79b6a51286319bc/urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760", size = 393185, upload-time = "2025-06-18T14:07:41.644Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc", size = 129795, upload-time = "2025-06-18T14:07:40.39Z" },
-]
-
-[[package]]
-name = "win32-setctime"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
 ]

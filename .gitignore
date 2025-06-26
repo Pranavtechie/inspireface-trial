@@ -1,14 +1,32 @@
-# Python-generated files
+tmp/
+*.pyc
+*.pyo
+*.pyd
 __pycache__/
-*.py[oc]
-build/
+*.so
+*.dylib
+venv/
+env/
+.build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
 wheels/
-*.egg-info
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.idea/
+*.db
+version.txt
 
-# Virtual environments
-.venv
 
-# inspireface 
 InspireFace/
-blazeface_fpn_ssh_1000e_v1.0_infer/
