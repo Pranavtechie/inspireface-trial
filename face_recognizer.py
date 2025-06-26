@@ -32,12 +32,12 @@ class FaceRecognizer:
                 )
                 # For Rockchip devices, reload is used to load the specific model.
                 # This function will also handle model downloading on first use.
-                ret = isf.reload(config.ROCKCHIP_MODEL)
-                if not ret:
-                    raise RuntimeError(
-                        f"Failed to load Rockchip model: {config.ROCKCHIP_MODEL}"
-                    )
-                print("Rockchip model loaded successfully.")
+                # ret = isf.reload(config.ROCKCHIP_MODEL)
+                # if not ret:
+                #     raise RuntimeError(
+                #         f"Failed to load Rockchip model: {config.ROCKCHIP_MODEL}"
+                #     )
+                # print("Rockchip model loaded successfully.")
             else:
                 if not is_linux:
                     print(
