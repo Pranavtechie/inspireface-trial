@@ -1,0 +1,14 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# inspireface 
+InspireFace/
+blazeface_fpn_ssh_1000e_v1.0_infer/
