@@ -22,51 +22,23 @@ class FaceRecognizer:
         Initializes the FaceRecognizer, loading the InspireFace engine and the face database.
         """
         try:
-            # Check for Linux OS, which we'll assume is a Rockchip device
-            # for the purpose of using the specialized hardware-accelerated model.
-            is_linux = platform.system() == "Linux"
+            print("Loading general-purpose CPU model (Megatron).")
 
-            if is_linux and config.ROCKCHIP_MODEL:
-                print(
-                    f"Linux OS detected. Attempting to load Rockchip model: {config.ROCKCHIP_MODEL}."
-                )
-                # For Rockchip devices, reload is used to load the specific model.
-                # This function will also handle model downloading on first use.
-                # ret = isf.reload(config.ROCKCHIP_MODEL)
-                # if not ret:
-                #     raise RuntimeError(
-                #         f"Failed to load Rockchip model: {config.ROCKCHIP_MODEL}"
-                #     )
-                # print("Rockchip model loaded successfully.")
-            else:
-                if not is_linux:
-                    print(
-                        f"{platform.system()} OS detected. Loading general-purpose CPU model (Megatron)."
-                    )
-                else:  # is_linux but no ROCKCHIP_MODEL in config
-                    print(
-                        "Linux OS detected, but ROCKCHIP_MODEL not configured. Loading general-purpose CPU model (Megatron)."
-                    )
+            model_name = "Megatron"
+            model_path = os.path.join(Path.home(), ".inspireface", "models", model_name)
 
-                model_name = "Megatron"
-                model_path = os.path.join(
-                    Path.home(), ".inspireface", "models", model_name
-                )
+            if not os.path.exists(model_path):
+                print(f"Model '{model_name}' not found at {model_path}, downloading...")
+                try:
+                    isf.pull_latest_model(model_name)
+                    print("Model downloaded successfully.")
+                except Exception as e:
+                    print(f"Failed to download model: {e}")
+                    exit(1)
 
-                if not os.path.exists(model_path):
-                    print(
-                        f"Model '{model_name}' not found at {model_path}, downloading..."
-                    )
-                    try:
-                        isf.pull_latest_model(model_name)
-                        print("Model downloaded successfully.")
-                    except Exception as e:
-                        print(f"Failed to download model: {e}")
-                        exit(1)
-
-                ret = isf.launch(resource_path=model_path)
-                if not ret:
-                    raise RuntimeError("Failed to launch from local model.")
+            ret = isf.launch(resource_path=model_path)
+            if not ret:
+                raise RuntimeError("Failed to launch from local model.")
 
             opt = isf.HF_ENABLE_FACE_RECOGNITION
             self.session = isf.InspireFaceSession(opt, isf.HF_DETECT_MODE_ALWAYS_DETECT)
