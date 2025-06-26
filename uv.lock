@@ -167,8 +167,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
-    { name = "inspireface", marker = "sys_platform == 'darwin'", specifier = ">=1.2.3.post3" },
-    { name = "inspireface", marker = "sys_platform == 'linux'" },
+    { name = "inspireface", marker = "sys_platform == 'darwin'", path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" },
+    { name = "inspireface", marker = "sys_platform == 'linux'", path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" },
     { name = "opencv-python", specifier = ">=4.11.0.86" },
     { name = "paddlepaddle", specifier = ">=2.6.0" },
     { name = "requests", specifier = ">=2.31.0" },
@@ -177,16 +177,20 @@ requires-dist = [
 
 [[package]]
 name = "inspireface"
-version = "1.2.3.post3"
-source = { registry = "https://pypi.org/simple" }
+version = "0.0.0"
+source = { path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" }
 dependencies = [
     { name = "loguru", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "numpy", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/6d/c2139db01282c5a3aed9b85344d0045a1f28812e7028a04cc69123a87641/inspireface-1.2.3.post3-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:28523db1048020d2568fe1a46707200d0e0f3f2c5e3f8ea5a3325d6521d00496", size = 2489960, upload-time = "2025-06-24T02:26:16.602Z" },
-    { url = "https://files.pythonhosted.org/packages/88/b4/66a7c1966afa7ee62ba73c6916d26091f8d7052285061d3ffef7b19ee7d1/inspireface-1.2.3.post3-cp310-cp310-macosx_14_0_universal2.whl", hash = "sha256:c788cdc8ed9008781e8294960bc011bba967f4acb86afe39fc01e064b61a52b1", size = 2042198, upload-time = "2025-06-24T02:26:39.384Z" },
-    { url = "https://files.pythonhosted.org/packages/57/c3/718dd829f785a575786dd516b73530ef61f85043d08102dbd595b6aacabe/inspireface-1.2.3.post3-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:939fc4ad2b483e74d56a71283e95da70c404fb1a7d3fced09a38c8d3d2b25d21", size = 2936095, upload-time = "2025-06-24T02:26:28.926Z" },
+    { filename = "inspireface-0.0.0-cp310-cp310-linux_aarch64.whl", hash = "sha256:1c1880152bede0846d14237c8891effa35878efd29e8d70c3242f05fefc27b54" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "loguru" },
+    { name = "numpy" },
 ]
 
 [[package]]
