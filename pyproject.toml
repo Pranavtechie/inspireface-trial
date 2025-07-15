@@ -10,6 +10,8 @@ dependencies = [
     "paddlepaddle>=2.6.0",
     "setuptools>=80.9.0",
     "requests>=2.31.0",
-    "inspireface; sys_platform == 'linux'",
-    "inspireface>=1.2.3.post3; sys_platform == 'darwin'",
+    "inspireface",
 ]
+
+[tool.uv.sources]
+inspireface = { path = "../InspireFace/python/dist/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" }
