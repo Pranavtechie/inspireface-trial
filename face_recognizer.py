@@ -95,8 +95,9 @@ class FaceRecognizer:
                 if hasattr(self.session, "set_track_preview_size"):
                     try:
                         self.session.set_track_preview_size(
-                            320
+                            640
                         )  # px, allowed: 160/320/640
+                        logging.info("Set Rockchip track preview size to 640")
                     except Exception:
                         pass  # Non-critical – carry on with default
 
