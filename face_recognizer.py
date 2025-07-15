@@ -443,7 +443,7 @@ class FaceRecognizer:
             if not ret:
                 break
             # Ensure frame memory layout is contiguous for native bindings
-            if not frame.flags.get("C_CONTIGUOUS", True):
+            if not frame.flags["C_CONTIGUOUS"]:
                 logging.debug("Frame is not C_CONTIGUOUS; making contiguous copy")
                 frame = np.ascontiguousarray(frame)
             logging.debug(
