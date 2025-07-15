@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pickle
 import platform
@@ -10,6 +11,16 @@ import requests
 
 import config
 import inspireface as isf
+
+# -----------------------------------------------------------------------------
+# Debug logging setup – writes to inspireface_debug.log
+# -----------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename="inspireface_debug.log",
+    filemode="w",
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 
 
 class FaceRecognizer:
@@ -99,6 +110,13 @@ class FaceRecognizer:
                 print(f"Removed old pickle file: {pickle_path}")
 
             print("InspireFace session created and FeatureHub enabled.")
+
+            # Log basic runtime/platform information
+            logging.info(
+                "Session launched – Rockchip: %s, model path: %s",
+                self.is_rockchip,
+                model_path,
+            )
         except Exception as e:
             print(f"Error creating InspireFace session: {e}")
             exit(1)
@@ -162,11 +180,37 @@ class FaceRecognizer:
         Returns:
             The frame with detected faces and information drawn on it.
         """
-        faces = self.session.face_detection(frame)
+        # Face detection can occasionally raise ProcessingError on RK3588 when
+        # the RGA backend rejects an image with stride issues.  Capture the
+        # exception so we can inspect the circumstances.
+        try:
+            faces = self.session.face_detection(frame)
+        except Exception as e:
+            logging.exception(
+                "face_detection failed – frame.shape=%s×%s×%s | error=%s",
+                *frame.shape,
+                e,
+            )
+            # Propagate the error upward so the UI behaviour remains unchanged
+            raise
+
         names = []
         confidences = []
 
         if len(faces) > 0:
+            # Log bounding-box dimensions for further analysis
+            for face in faces:
+                x1, y1, x2, y2 = face.location
+                bw, bh = x2 - x1, y2 - y1
+                logging.debug(
+                    "Detected face – box=(%s,%s,%s,%s) w=%s h=%s",
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    bw,
+                    bh,
+                )
             for face in faces:
                 feature = self.session.face_feature_extract(frame, face)
                 if feature is not None:
@@ -359,6 +403,7 @@ class FaceRecognizer:
             ret, frame = cap.read()
             if not ret:
                 break
+            logging.debug("Raw frame shape: %s", frame.shape)
             if self.is_rockchip:
                 # RGA requires RGB888 width stride to be 16-aligned. Add padding on the right if needed.
                 height, width = frame.shape[:2]
@@ -373,6 +418,7 @@ class FaceRecognizer:
                         borderType=cv2.BORDER_CONSTANT,
                         value=[0, 0, 0],  # black padding
                     )
+                logging.debug("Padded frame shape: %s (pad_x=%s)", frame.shape, pad_x)
             processed_frame = self.recognize_faces(frame)
             cv2.imshow("InspireFace Recognition", processed_frame)
 
