@@ -46,6 +46,35 @@ class FaceRecognizer:
             opt = isf.HF_ENABLE_FACE_RECOGNITION
             self.session = isf.InspireFaceSession(opt, isf.HF_DETECT_MODE_ALWAYS_DETECT)
 
+            # --- Rockchip-specific runtime tweaks --------------------------------------
+            # The Rockchip RGA backend crashes when the cropped ROI width stride (in bytes)
+            # is not 16-aligned.  This typically happens when the detector returns tiny
+            # face boxes (< 16 px) that, after cropping in RGB888 (3 bytes/pixel), produce
+            # a 24-byte stride.  We can avoid these edge-cases by:
+            #   1) Upscaling the internal preview level to ≥320 px so the detector works
+            #      on a reasonably large canvas.
+            #   2) Ignoring detections whose bounding-box width is <16 px.
+            # The C-API exposes `HFSessionSetTrackPreviewSize` and
+            # `HFSessionSetFilterMinimumFacePixelSize`; the Python binding keeps the same
+            # snake-case names.  We call them defensively via `hasattr` so the code still
+            # runs on platforms / package builds where the symbols are absent.
+            if self.is_rockchip:
+                # Increase internal preview resolution
+                if hasattr(self.session, "set_track_preview_size"):
+                    try:
+                        self.session.set_track_preview_size(
+                            320
+                        )  # px, allowed: 160/320/640
+                    except Exception:
+                        pass  # Non-critical – carry on with default
+
+                # Skip faces smaller than 16 px to keep crop stride safe for RGA
+                if hasattr(self.session, "set_filter_minimum_face_pixel_size"):
+                    try:
+                        self.session.set_filter_minimum_face_pixel_size(16)
+                    except Exception:
+                        pass
+
             # Configure and enable the feature hub
             hub_config = isf.FeatureHubConfiguration(
                 primary_key_mode=isf.HF_PK_AUTO_INCREMENT,
