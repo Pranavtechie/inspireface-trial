@@ -21,6 +21,13 @@ logging.basicConfig(
     filemode="w",
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
+# Add a console handler so logs are also visible in the terminal.
+_console_handler = logging.StreamHandler()
+_console_handler.setLevel(logging.DEBUG)
+_console_handler.setFormatter(
+    logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+)
+logging.getLogger().addHandler(_console_handler)
 
 
 class FaceRecognizer:
@@ -33,13 +40,25 @@ class FaceRecognizer:
         Initializes the FaceRecognizer, loading the InspireFace engine and the face database.
         """
         try:
+            # -------------------------------------------------------------
+            # Diagnostic logs to trace initialisation on all platforms
+            # -------------------------------------------------------------
+            logging.info("FaceRecognizer initialisation started")
+            logging.debug(
+                "Platform detected: system=%s, machine=%s",
+                platform.system(),
+                platform.machine(),
+            )
+            logging.info("OpenCV version: %s", cv2.__version__)
             model_name = "Megatron"
             model_path = os.path.join(Path.home(), ".inspireface", "models", model_name)
+            logging.info("Using model '%s' at %s", model_name, model_path)
 
             # Detect if we are running on a Rockchip (e.g., RK3588) Linux device
             self.is_rockchip = platform.system() == "Linux" and (
                 platform.machine() in {"aarch64", "arm64"}
             )
+            logging.info("is_rockchip resolved to %s", self.is_rockchip)
 
             if not os.path.exists(model_path):
                 print(f"Model '{model_name}' not found at {model_path}, downloading...")
@@ -50,7 +69,9 @@ class FaceRecognizer:
                     print(f"Failed to download model: {e}")
                     exit(1)
 
+            logging.info("Launching InspireFace engine …")
             ret = isf.launch(resource_path=model_path)
+            logging.debug("isf.launch returned %s", ret)
             if not ret:
                 raise RuntimeError("Failed to launch from local model.")
 
@@ -87,6 +108,7 @@ class FaceRecognizer:
                         pass
 
             # Configure and enable the feature hub
+            logging.info("Enabling FeatureHub …")
             hub_config = isf.FeatureHubConfiguration(
                 primary_key_mode=isf.HF_PK_AUTO_INCREMENT,
                 search_mode=isf.HF_SEARCH_MODE_EAGER,
@@ -95,6 +117,7 @@ class FaceRecognizer:
                 search_threshold=config.SIMILARITY_THRESHOLD,
             )
             ret = isf.feature_hub_enable(hub_config)
+            logging.debug("feature_hub_enable returned %s", ret)
             if not ret:
                 raise RuntimeError("Failed to enable FeatureHub.")
 
@@ -118,6 +141,7 @@ class FaceRecognizer:
                 model_path,
             )
         except Exception as e:
+            logging.exception("Exception during FaceRecognizer initialisation")
             print(f"Error creating InspireFace session: {e}")
             exit(1)
 
@@ -382,6 +406,21 @@ class FaceRecognizer:
                 cap = temp_cap
                 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                # Log actual camera properties after setting.
+                actual_w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+                actual_h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                fourcc_int = int(cap.get(cv2.CAP_PROP_FOURCC))
+                fourcc = "".join([chr((fourcc_int >> 8 * j) & 0xFF) for j in range(4)])
+                logging.info(
+                    "Camera opened index %s: resolution=%sx%s fps=%s fourcc=%s (0x%x)",
+                    i,
+                    int(actual_w),
+                    int(actual_h),
+                    fps,
+                    fourcc,
+                    fourcc_int,
+                )
                 break
             else:
                 # Release the capture if it's not working
@@ -403,7 +442,16 @@ class FaceRecognizer:
             ret, frame = cap.read()
             if not ret:
                 break
-            logging.debug("Raw frame shape: %s", frame.shape)
+            # Ensure frame memory layout is contiguous for native bindings
+            if not frame.flags.get("C_CONTIGUOUS", True):
+                logging.debug("Frame is not C_CONTIGUOUS; making contiguous copy")
+                frame = np.ascontiguousarray(frame)
+            logging.debug(
+                "Raw frame shape: %s dtype=%s strides=%s",
+                frame.shape,
+                frame.dtype,
+                frame.strides,
+            )
             if self.is_rockchip:
                 # RGA requires RGB888 width stride to be 16-aligned. Add padding on the right if needed.
                 height, width = frame.shape[:2]
