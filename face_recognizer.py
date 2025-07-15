@@ -5,11 +5,11 @@ import platform
 from pathlib import Path
 
 import cv2
-import inspireface as isf
 import numpy as np
 import requests
 
 import config
+import inspireface as isf
 
 
 class FaceRecognizer:
@@ -24,6 +24,11 @@ class FaceRecognizer:
         try:
             model_name = "Megatron"
             model_path = os.path.join(Path.home(), ".inspireface", "models", model_name)
+
+            # Detect if we are running on a Rockchip (e.g., RK3588) Linux device
+            self.is_rockchip = platform.system() == "Linux" and (
+                platform.machine() in {"aarch64", "arm64"}
+            )
 
             if not os.path.exists(model_path):
                 print(f"Model '{model_name}' not found at {model_path}, downloading...")
@@ -325,12 +330,15 @@ class FaceRecognizer:
             ret, frame = cap.read()
             if not ret:
                 break
-            # Ensure frame dimensions are multiples of 16 for RGA compatibility
-            height, width = frame.shape[:2]
-            if width % 16 != 0 or height % 16 != 0:
-                new_width = ((width + 15) // 16) * 16
-                new_height = ((height + 15) // 16) * 16
-                frame = cv2.resize(frame, (new_width, new_height))
+            if self.is_rockchip:
+                # Ensure frame dimensions are multiples of 4 (stride alignment) by converting to BGRA
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+                # Optional: further ensure 16-pixel alignment if needed by RGA
+                # height, width = frame.shape[:2]
+                # if width % 16 != 0 or height % 16 != 0:
+                #     new_width = ((width + 15) // 16) * 16
+                #     new_height = ((height + 15) // 16) * 16
+                #     frame = cv2.resize(frame, (new_width, new_height))
             processed_frame = self.recognize_faces(frame)
             cv2.imshow("InspireFace Recognition", processed_frame)
 
