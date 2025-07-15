@@ -22,8 +22,6 @@ class FaceRecognizer:
         Initializes the FaceRecognizer, loading the InspireFace engine and the face database.
         """
         try:
-            print("Loading general-purpose CPU model (Megatron).")
-
             model_name = "Megatron"
             model_path = os.path.join(Path.home(), ".inspireface", "models", model_name)
 
