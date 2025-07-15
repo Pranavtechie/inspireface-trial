@@ -104,8 +104,11 @@ class FaceRecognizer:
                 if hasattr(self.session, "set_filter_minimum_face_pixel_size"):
                     try:
                         self.session.set_filter_minimum_face_pixel_size(16)
-                    except Exception:
-                        pass
+                        logging.info("Applied Rockchip minimum face pixel size 16")
+                    except Exception as e:
+                        logging.warning(
+                            "Failed to set Rockchip min face pixel size: %s", e
+                        )
 
             # Configure and enable the feature hub
             logging.info("Enabling FeatureHub …")
@@ -215,8 +218,8 @@ class FaceRecognizer:
                 *frame.shape,
                 e,
             )
-            # Propagate the error upward so the UI behaviour remains unchanged
-            raise
+            # On Rockchip, stride issues can crash processing. Skip this frame.
+            return frame
 
         names = []
         confidences = []
