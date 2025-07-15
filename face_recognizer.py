@@ -331,14 +331,19 @@ class FaceRecognizer:
             if not ret:
                 break
             if self.is_rockchip:
-                # Ensure frame dimensions are multiples of 4 (stride alignment) by converting to BGRA
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
-                # Optional: further ensure 16-pixel alignment if needed by RGA
-                # height, width = frame.shape[:2]
-                # if width % 16 != 0 or height % 16 != 0:
-                #     new_width = ((width + 15) // 16) * 16
-                #     new_height = ((height + 15) // 16) * 16
-                #     frame = cv2.resize(frame, (new_width, new_height))
+                # RGA requires RGB888 width stride to be 16-aligned. Add padding on the right if needed.
+                height, width = frame.shape[:2]
+                pad_x = (-width) % 16  # how many columns to pad to reach multiple of 16
+                if pad_x:
+                    frame = cv2.copyMakeBorder(
+                        frame,
+                        top=0,
+                        bottom=0,
+                        left=0,
+                        right=pad_x,
+                        borderType=cv2.BORDER_CONSTANT,
+                        value=[0, 0, 0],  # black padding
+                    )
             processed_frame = self.recognize_faces(frame)
             cv2.imshow("InspireFace Recognition", processed_frame)
 
