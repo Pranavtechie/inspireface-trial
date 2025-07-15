@@ -5,11 +5,11 @@ import platform
 from pathlib import Path
 
 import cv2
+import inspireface as isf
 import numpy as np
 import requests
 
 import config
-import inspireface as isf
 
 
 class FaceRecognizer:
@@ -304,6 +304,8 @@ class FaceRecognizer:
             if temp_cap.isOpened() and temp_cap.read()[0]:
                 print(f"Successfully opened camera at index {i}.")
                 cap = temp_cap
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
                 break
             else:
                 # Release the capture if it's not working
@@ -325,7 +327,12 @@ class FaceRecognizer:
             ret, frame = cap.read()
             if not ret:
                 break
-
+            # Ensure frame dimensions are multiples of 16 for RGA compatibility
+            height, width = frame.shape[:2]
+            if width % 16 != 0 or height % 16 != 0:
+                new_width = ((width + 15) // 16) * 16
+                new_height = ((height + 15) // 16) * 16
+                frame = cv2.resize(frame, (new_width, new_height))
             processed_frame = self.recognize_faces(frame)
             cv2.imshow("InspireFace Recognition", processed_frame)
 

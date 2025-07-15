@@ -167,8 +167,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
-    { name = "inspireface", marker = "sys_platform == 'darwin'", path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" },
-    { name = "inspireface", marker = "sys_platform == 'linux'", path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" },
+    { name = "inspireface", marker = "sys_platform == 'darwin'", specifier = ">=1.2.3.post3" },
+    { name = "inspireface", marker = "sys_platform == 'linux'" },
     { name = "opencv-python", specifier = ">=4.11.0.86" },
     { name = "paddlepaddle", specifier = ">=2.6.0" },
     { name = "requests", specifier = ">=2.31.0" },
@@ -177,20 +177,17 @@ requires-dist = [
 
 [[package]]
 name = "inspireface"
-version = "0.0.0"
-source = { path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" }
+version = "1.2.3.post4"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "loguru", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "numpy", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
 ]
 wheels = [
-    { filename = "inspireface-0.0.0-cp310-cp310-linux_aarch64.whl", hash = "sha256:1c1880152bede0846d14237c8891effa35878efd29e8d70c3242f05fefc27b54" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "loguru" },
-    { name = "numpy" },
+    { url = "https://files.pythonhosted.org/packages/cd/9b/e87331892ea38039885d22dbfd5c4359adc4ecbc39f54896d58d8af4d19c/inspireface-1.2.3.post4-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:c5b2e9d99454d692fa09304b705300e49d4b6c6091382233d90159282a5b13a7", size = 2490078, upload-time = "2025-06-27T16:32:55.272Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/ca/3c6fac13f86c4b4954b95b6aca74539545151c316f4c7289a23d41132c0e/inspireface-1.2.3.post4-cp310-cp310-macosx_14_0_universal2.whl", hash = "sha256:df9e6e029afdbe8308dfbbf1643082fbf0419f7bcebe1389153ed007a7d4e26c", size = 2042276, upload-time = "2025-06-27T16:32:50.862Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/dc/3ec42737d7e71fadbf8f26576682a4d77ef16a0947b36b6d597bc5ea6404/inspireface-1.2.3.post4-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:ae00acf37dcdce784050a6d49cf70cf1a1ed2f5e112c4980e1af0204de563628", size = 2695898, upload-time = "2025-06-27T16:32:52.83Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/bb/d1f04536dc4b81ef50949075b83106a4da6316db5e023856b19499120487/inspireface-1.2.3.post4-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:64ae1b2e7985e44fc48cdd15f1094c08ed5954194f1ee5a5ac80686ce31edcee", size = 2936473, upload-time = "2025-06-27T16:33:23.236Z" },
 ]
 
 [[package]]

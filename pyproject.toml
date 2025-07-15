@@ -13,9 +13,3 @@ dependencies = [
     "inspireface; sys_platform == 'linux'",
     "inspireface>=1.2.3.post3; sys_platform == 'darwin'",
 ]
-
-
-[tool.uv.sources]
-inspireface = { path = "python/inspireface-0.0.0-cp310-cp310-linux_aarch64.whl" }
-
-

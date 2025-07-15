@@ -6,4 +6,3 @@ import inspireface as isf
 # Configure a face quality detection function
 opt = isf.HF_ENABLE_QUALITY
 session = isf.InspireFaceSession(opt, isf.HF_DETECT_MODE_ALWAYS_DETECT)
-
