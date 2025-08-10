@@ -27,8 +27,16 @@ share/python-wheels/
 .idea/
 *.db
 version.txt
+.cursor/
+.ruff_cache/
+.venv/
 
 
 InspireFace/
 
 *.log
+
+## Data stuff
+data/
+reference/
+logs/
