@@ -282,7 +282,7 @@ def _mark_attendance_remote(person_id: str, attendanceTimeStamp: str, session_id
     """
 
     print("[Flask] Sending data to kcc api")
-    url = "http://localhost:8787/axon/mark-attendance"
+    url = "http://api.korukondacoachingcentre.com/axon/mark-attendance"
     try:
         resp = req.post(
             url,
