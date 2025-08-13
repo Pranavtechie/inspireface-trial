@@ -8,7 +8,7 @@ dependencies = [
     "opencv-python>=4.11.0.86",
     "requests>=2.31.0",
     "inspireface>=1.2.3.post3",
-    "pyside6==6.9.0",
+    "pyside6==6.8.0.2",
     "flask>=3.1.1",
     "flask-cors>=6.0.1",
     "uuid-extension>=0.2.0",
