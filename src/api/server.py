@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from os import uname
 from urllib.parse import urlparse
 
 import requests as req
@@ -58,7 +59,11 @@ def _close_db(exc):
 
 @app.route("/")
 def hello_world():
-    return {"message": "Hello, World!"}
+    return {
+        "message": "Hello, World!",
+        "machine": uname(),
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 @app.route("/test", methods=["GET"])

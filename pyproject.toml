@@ -14,6 +14,7 @@ dependencies = [
     "uuid-extension>=0.2.0",
     "peewee>=3.18.2",
     "pytz>=2025.2",
+    "gunicorn>=23.0.0",
 ]
 
 [tool.uv]

@@ -1,7 +1,7 @@
 import os
 import platform
 from pathlib import Path
-from typing import Callable, Dict, Optional, Set, Tuple
+from typing import Callable, Dict, Iterable, Optional, Set, Tuple
 
 import cv2
 import inspireface as isf
@@ -143,6 +143,27 @@ class FaceRecognizer:
         return tuple(
             self._attendance_marked_by_session.get(self.current_session_id, set())
         )
+
+    def seed_attendance_for_session(
+        self, session_id: Optional[str], person_ids: Iterable[str]
+    ) -> None:
+        """Seed idempotency set with already-present personIds for a session.
+
+        This prevents duplicate "person-recognized" events for people who were
+        already marked present before the current run.
+        """
+        if not session_id:
+            return
+        if not person_ids:
+            return
+        session_set = self._attendance_marked_by_session.setdefault(session_id, set())
+        for pid in person_ids:
+            if pid:
+                session_set.add(pid)
+
+    def seed_current_session(self, person_ids: Iterable[str]) -> None:
+        """Seed idempotency for the currently active session."""
+        self.seed_attendance_for_session(self.current_session_id, person_ids)
 
     def set_on_first_attendance_callback(
         self, callback: Optional[Callable[[str], None]]

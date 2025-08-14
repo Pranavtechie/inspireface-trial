@@ -144,10 +144,8 @@ class BasicApp(QMainWindow):
         # Pass current session id (if already resolved) so idempotency starts aligned
         try:
             self.recognizer.set_current_session(self.current_session_id)
-            # Optimistic UI update on first attendance
-            self.recognizer.set_on_first_attendance_callback(
-                self._on_first_attendance_local
-            )
+            # Seed idempotency from DB for current session to avoid duplicates
+            self._seed_recognizer_from_db_for_current_session()
         except Exception:
             pass
 
@@ -194,6 +192,7 @@ class BasicApp(QMainWindow):
                 is_active = bool(data.get("active") and data.get("session"))
                 # Capture session id (stringify for consistency across DB/HTTP)
                 new_session_id = None
+                old_session_id = getattr(self, "current_session_id", None)
                 if is_active:
                     sess = data.get("session") or {}
                     sid = sess.get("id")
@@ -203,6 +202,15 @@ class BasicApp(QMainWindow):
                 if self.recognizer:
                     try:
                         self.recognizer.set_current_session(self.current_session_id)
+                        # On session change, seed recognizer with already-present IDs
+                        if new_session_id and new_session_id != old_session_id:
+                            self._seed_recognizer_from_db_for_current_session()
+                            # Immediately refresh table to reflect new session
+                            try:
+                                if self.is_active_session:
+                                    self.refresh_room_table()
+                            except Exception:
+                                pass
                     except Exception:
                         pass
                 if is_active:
@@ -379,7 +387,7 @@ class BasicApp(QMainWindow):
                 pass
 
         # Reset optimistic state on session toggle
-        self._optimistic_present_by_room = {}
+        # No optimistic UI overlay; counts come solely from DB
 
     def refresh_room_table(self) -> None:
         """Populate the room attendance table from the database."""
@@ -432,10 +440,7 @@ class BasicApp(QMainWindow):
             for idx, room in enumerate(rooms):
                 room_name = room.roomName or room.roomId
                 total = int(totals_by_room.get(room.roomId, 0))
-                optimistic = int(
-                    getattr(self, "_optimistic_present_by_room", {}).get(room.roomId, 0)
-                )
-                present = int(present_by_room.get(room.roomId, 0)) + optimistic
+                present = int(present_by_room.get(room.roomId, 0))
                 absent = max(total - present, 0)
 
                 # Room name
@@ -474,80 +479,25 @@ class BasicApp(QMainWindow):
             except Exception:
                 pass
 
-    # --- Optimistic UI helpers -------------------------------------------------
-    def _ensure_optimistic_maps(self) -> None:
-        if not hasattr(self, "_optimistic_present_by_room"):
-            self._optimistic_present_by_room: dict[str, int] = {}
-
-    def _on_first_attendance_local(self, person_id: str) -> None:
-        """Increment room's present count optimistically for the current session."""
+    # --- Idempotency seeding ---------------------------------------------------
+    def _seed_recognizer_from_db_for_current_session(self) -> None:
+        """Seed recognizer idempotency from DB for the active session."""
         try:
-            self._ensure_optimistic_maps()
+            if not self.recognizer or not self.current_session_id:
+                return
             if db.is_closed():
                 db.connect(reuse_if_open=True)
-            person = Person.get_or_none(Person.uniqueId == person_id)
-            if not person or not person.roomId:
-                return
-            # Bump room present overlay by +1
-            current = self._optimistic_present_by_room.get(person.roomId, 0)
-            self._optimistic_present_by_room[person.roomId] = current + 1
-            # Update the table row in place if visible
-            self._update_room_row_counts(person.roomId)
+            rows = (
+                CadetAttendance.select(CadetAttendance.personId)
+                .where(CadetAttendance.sessionId == self.current_session_id)
+                .distinct()
+                .tuples()
+            )
+            person_ids = [pid for (pid,) in rows if pid]
+            if person_ids:
+                self.recognizer.seed_current_session(person_ids)
         except Exception:
             pass
-        finally:
-            try:
-                if not db.is_closed():
-                    db.close()
-            except Exception:
-                pass
-
-    def _update_room_row_counts(self, target_room_id: str) -> None:
-        """Recalculate counts for a single room row and update UI."""
-        try:
-            if db.is_closed():
-                db.connect(reuse_if_open=True)
-
-            # Recompute totals and present for just this room
-            # Recompute and then just trigger a full refresh to keep logic simple
-            Person.select(fn.COUNT(Person.uniqueId)).where(
-                (Person.roomId == target_room_id)
-            ).scalar()
-
-            # Compute present from attendance for active session
-            active_session = Session.get_or_none(Session.actualEndTimestamp.is_null())
-            active_session_id = active_session.id if active_session else None
-            present = 0
-            if active_session_id is not None:
-                present = (
-                    CadetAttendance.select(
-                        fn.COUNT(fn.DISTINCT(CadetAttendance.personId))
-                    )
-                    .join(Person, on=(Person.uniqueId == CadetAttendance.personId))
-                    .where(
-                        (CadetAttendance.sessionId == active_session_id)
-                        & (Person.roomId == target_room_id)
-                    )
-                    .scalar()
-                    or 0
-                )
-            optimistic = int(
-                getattr(self, "_optimistic_present_by_room", {}).get(target_room_id, 0)
-            )
-            present += optimistic
-            # For robustness and to avoid mapping issues between roomName and roomId,
-            # refresh the entire table.
-            rows = self.room_table.rowCount()
-            for idx in range(rows):
-                item = self.room_table.item(idx, 0)
-                if not item:
-                    continue
-                # Column 0 shows room name, we need to match by roomId; in absence of
-                # hidden data role, refresh entire table if name mapping is ambiguous
-                # Fallback: refresh all
-                # To keep it simple and robust, refresh entire table
-                self.refresh_room_table()
-                return
         finally:
             try:
                 if not db.is_closed():
